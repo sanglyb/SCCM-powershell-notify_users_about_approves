@@ -10,14 +10,15 @@ function send-message{
                
 	$MailServer = "mail.yourdomain.com"
 	$From = "sccm@yourdomain.com"
-	$Subject="Уведомление о запросе разрешения на установку приложения"
+	$Subject="Notification about application request approve"
 	Send-MailMessage -To $email -From $From -Subject $subject -Body $message -SmtpServer $MailServer -BodyAsHtml -Encoding ([System.Text.Encoding]::UTF8)
 }
  
- 
+#path to store the csv file for finding new requests
 $path="C:\some\script\path\"
+#determine last write to file, addhours is used for more safety, in case of something went wrong with last script run. 
 $lastWriteToCSV=(Get-ChildItem $path\lastvalue.csv).lastwritetime.addhours(-24)
- 
+#admin emails
 $adminEmail=@("admin1@yourdomain.com","admin2@yourdomain.com")
 $htmlHead="<html><head><style>
                 BODY{font-family: Arial; font-size: 8pt;}
@@ -46,25 +47,25 @@ if ($approves -ne $null){
 		   $user=get-cmresource $resourceid -fast
 		   $message=$null
 		   if ($newApprove.currentstate -eq "4"){
-			   $message="Уважаемый(ая) $($user.FullUserName), вы запрашивали утверждение на установку приложения <b>`"$($newApprove.Application)`"</b>. Уведомляем вас, что ваш запрос был утвержден. <br />Для установки приложения запустите центр программного обеспечения (Software Center), выберите запрашиваемое приложение, и нажмите кнопку `"Установить`""
+			   $message="Dear $($user.FullUserName), you have requested the approval to install <b>`"$($newApprove.Application)`"</b>. Your request had been approved. <br />To install the application, please start Software Center, select needed app and click `"install`" button."
 		   }
 		   elseif ($newApprove.currentstate -eq "3"){
-			   $message="Уважаемый(ая) $($user.FullUserName), вы запрашивали утверждение на установку приложения <b>`"$($newApprove.Application)`"</b>. Уведомляем вас, что ваш запрос был отклонён. <br />"
+			   $message="Dear $($user.FullUserName), you have requested the approval to install <b>`"$($newApprove.Application)`"</b>. Your request had been denied <br />"
 			   if ($newApprove.Comments -ne ""){
-				   $message+="Оставленный комментарий - $($newApprove.Comments) <br />"
+				   $message+="With comment - $($newApprove.Comments) <br />"
 			   }
-			   $message+="Подробности можно уточнить у ваших администраторов информационных систем."
+			   $message+="Details can be obtained from your IT administrators."
 		   }
 		   elseif ($newApprove.currentstate -eq "1"){
 			   $appr+=$newApprove
 		   }
 		   elseif ($newApprove.currentstate -eq "2"){
-			   $messagetoadmin+="$($user.Name) отменил свой запрос на установку приложения <b>`"$($newApprove.Application)`"</b>.<br />"
+			   $messagetoadmin+="$($user.Name) canceled his approval request to install <b>`"$($newApprove.Application)`"</b>.<br />"
 		   }
 		  
 		   if ($newApprove.currentstate -eq "4" -or $newApprove.currentstate -eq "3"){
 			   if ($user.Mail -eq ""){
-				   $messagetoadmin += "<br /> Не удалось отправить уведомление пользователю $($user.name) об одобрении/отклонении запроса на установку приложения <b>`"$($newApprove.Application)`"</b>, т.к. не удалось обнаружить аттрибут mail в свойствах учётной записи."
+				   $messagetoadmin += "<br /> Unable to send the notification to the user - $($user.name) about approval of his request to install <b>`"$($newApprove.Application)`"</b>. Unable to find mail attribute in users properties."
 			   }
 			   else {
 				   $email=@($($user.Mail))
@@ -76,7 +77,7 @@ if ($approves -ne $null){
 		   }
 	   }
 	   if ($appr -ne ""){
-		   $messagetoadmin+="Поступили новые запросы на утверждение установки приложений. Просьба зайти в консоль System Center и обработать запросы:<br />"
+		   $messagetoadmin+="There are new approval requests to install applications. Please connect to System Center console and process requests:<br />"
 		   $messagetoadmin+=$appr | select-object application,User,LastModifiedBy,Comments,CurrentState | convertto-html
 		   
 	   }
@@ -95,7 +96,7 @@ if ($oldApproves -ne $null){
 	
 }#>
 if ($messagetoadmin -ne "" -and $messagetoadmin -ne $null){
-	$messagetoadmin=($htmlHead+"Добрый день.<br />"+$messagetoadmin) | out-string
+	$messagetoadmin=($htmlHead+"Hello.<br />"+$messagetoadmin) | out-string
 	send-message $messagetoadmin $adminEmail
 }
 
