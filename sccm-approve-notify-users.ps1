@@ -1,6 +1,6 @@
 #you should paste here strings from powershell ise started from sccm console.
 Import-Module 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin\ConfigurationManager.psd1' # Import the ConfigurationManager.psd1 module 
-Set-Location 'LPK:' # Set the current location to be the site code.
+Set-Location 'SIT:' # Set the current location to be the site code.
  
 function send-message{
     param (
